@@ -1,29 +1,28 @@
-# Mm.pyo
-Mm2005 
-import random
-# Generate Random Password 
+import requests
+import hashlib
 
-char = input("Enter Words with , between each word:")
-number = input("Enter numbers  with , between each number:")
-symbols = input("Enter Symbols with , between each symbol:")
+def check_password(password):
+    # Hash the password using SHA1
+    sha1_password = hashlib.sha1(password.encode('utf-8')).hexdigest().upper()
+    prefix = sha1_password[:5]   # First 5 characters
+    suffix = sha1_password[5:]   # Remaining characters
 
-list_chars = char.split(",")
-list_numbers = number.split(",")
-list_symbols = symbols.split(",")
-# char symbols number
-length_password = int(input("Enter number of passwords: "))
-my_password_list = []
-password = ""
-for i in range(1,length_password + 1):
-    char_random = random.choice(list_chars)
-    number_random = random.choice(list_numbers)
-    symbol_random = random.choice(list_symbols)
-    password1 = f"{symbol_random}{char_random}{number_random}\n"
-    password2 = f"{char_random}{symbol_random}{number_random}\n"
-    password3 = f"{number_random}{char_random}{symbol_random}\n"
-    with open('mylist.txt','a') as f :
-        f.writelines(password1)
-        f.writelines(password2)
-        f.writelines(password3)
+    # Send the first 5 characters of the hash to the API
+    url = f"https://api.pwnedpasswords.com/range/{prefix}"
+    response = requests.get(url)
 
-        
+    # Check if the remaining hash exists in the leaked database
+    for line in response.text.splitlines():
+        pwned_suffix, count = line.split(':')
+
+        if pwned_suffix == suffix:
+            print("❌ Your password has been found in data breaches.")
+            return
+
+    print("✅ Your password was NOT found in any known breaches.")
+
+# User input
+password = input("Enter your password: ")
+
+# Function call
+check_password(password)
